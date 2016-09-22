@@ -3,6 +3,7 @@ package in.ac.vit.smartcityapp.Controller;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,16 +18,19 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import in.ac.vit.smartcityapp.Model.Entities.DeviceConfig;
+import in.ac.vit.smartcityapp.Model.Interfaces.ActivityToAdapterCom;
 import in.ac.vit.smartcityapp.R;
+import in.ac.vit.smartcityapp.View.MainActivity;
 
-public class CustomRVAdapter extends RecyclerView.Adapter<CustomRVAdapter.CustomViewHolder>{
+public class CustomRVAdapter extends RecyclerView.Adapter<CustomRVAdapter.CustomViewHolder> implements ActivityToAdapterCom {
 
     private static final String TAG = "TAG";
-    private Context activityContext ;
+    private MainActivity mainActivity;
     private List<DeviceConfig> deviceConfigList ;
+    private CustomViewHolder holder ;
 
     public CustomRVAdapter(Context activityContext, List<DeviceConfig> deviceConfigList) {
-        this.activityContext = activityContext;
+        mainActivity = (MainActivity) activityContext ;
         this.deviceConfigList = deviceConfigList ;
     }
 
@@ -34,7 +38,9 @@ public class CustomRVAdapter extends RecyclerView.Adapter<CustomRVAdapter.Custom
     public CustomViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.list_item, parent, false);
-        return new CustomViewHolder(view);
+        CustomViewHolder customViewHolder = new CustomViewHolder(view) ;
+        holder = customViewHolder ;
+        return holder;
     }
 
     @Override
@@ -47,7 +53,14 @@ public class CustomRVAdapter extends RecyclerView.Adapter<CustomRVAdapter.Custom
             @Override
             public void onClick(View view) {
                 tempConfig.setDeviceId(holder.getAdapterPosition());
+            }
+        });
 
+        holder.switchToggle.setOnCheckedChangeListener(new Switch.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(Switch view, boolean checked) {
+                Log.i(TAG, "onCheckedChanged: ");
+                mainActivity.notifyOnServer(holder.getAdapterPosition(), checked);
             }
         });
     }
@@ -70,7 +83,13 @@ public class CustomRVAdapter extends RecyclerView.Adapter<CustomRVAdapter.Custom
 
             ButterKnife.bind(this, itemView) ;
         }
+    }
 
-
+    @Override
+    public void toggleChange(int i, boolean status) {
+        DeviceConfig tempConfig = deviceConfigList.get(i) ;
+        tempConfig.setDeviceCurrentStatus(status);
+        Log.i(TAG, "toggleChange: ");
+        holder.switchToggle.setChecked(status);
     }
 }

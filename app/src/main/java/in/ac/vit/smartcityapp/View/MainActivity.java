@@ -4,36 +4,56 @@ import android.content.Intent;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
+import android.speech.tts.TextToSpeech;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkResponse;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.rey.material.widget.Switch;
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import in.ac.vit.smartcityapp.AppController;
 import in.ac.vit.smartcityapp.Controller.CustomRVAdapter;
 import in.ac.vit.smartcityapp.Model.Entities.DeviceConfig;
+import in.ac.vit.smartcityapp.Model.Interfaces.ActivityAdapterCommunication;
 import in.ac.vit.smartcityapp.R;
 
-public class MainActivity extends AppCompatActivity implements RecognitionListener{
+public class MainActivity extends AppCompatActivity implements RecognitionListener, ActivityAdapterCommunication{
 
 
     private static final String TAG = "TAG";
     @BindView(R.id.activity_main_recyclerView) RecyclerView recyclerViewGrid ;
     @BindView(R.id.activity_main_record) ImageButton recordButton ;
 
+    private TextToSpeech textToSpeech ;
+
     private CustomRVAdapter customRVAdapter ;
     List<DeviceConfig> deviceConfigList ;
 
     private SpeechRecognizer speechRecognizer = null ;
     private Intent recognizerIntent;
+
 
     private boolean isOn = false ;
 
@@ -65,6 +85,13 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
                 RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH);
         /*recognizerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);*/
 
+        textToSpeech = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int i) {
+                if(i != TextToSpeech.ERROR)
+                    textToSpeech.setLanguage(Locale.ENGLISH) ;
+            }
+        });
 
     }
 
@@ -82,8 +109,10 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
 
     @OnClick(R.id.activity_main_record)
     void startRecording(){
-        if(!isOn)
+
+        if(!isOn || speechRecognizer != null){
             speechRecognizer.startListening(recognizerIntent);
+        }
         else
             speechRecognizer.stopListening();
 
@@ -113,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
 
     @Override
     public void onEndOfSpeech() {
-
+        Log.i(TAG, "onEndOfSpeech: ");
     }
 
     @Override
@@ -168,8 +197,39 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
         ArrayList<String> matches = bundle
                 .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
 
-        for (String result : matches)
-            Log.i(TAG, "onPartialResults: " + result);
+        for (String result : matches){
+            Log.i(TAG, "onPartialResults: \n" + result);
+
+            String text = result.toLowerCase() ;
+            textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null) ;
+
+            if(!text.contains("don't") && !text.contains("do not")){
+                if(text.contains("on") && text.contains("lights")){
+                    customRVAdapter.toggleChange(1, true);
+
+                    View view = recyclerViewGrid.getChildAt(1) ;
+                    if(view!= null){
+                        Switch switchButton = (Switch) view.findViewById(R.id.list_item_switch_) ;
+                        switchButton.setChecked(true);
+                    }
+
+                    isOn = !isOn ;
+                    speechRecognizer.stopListening();
+                    textToSpeech.speak("Okay, I am turning the lights on.",TextToSpeech.QUEUE_FLUSH, null) ;
+                }else if(text.contains("off") && text.contains("lights")){
+
+                    View view = recyclerViewGrid.getChildAt(1) ;
+                    if(view!= null){
+                        Switch switchButton = (Switch) view.findViewById(R.id.list_item_switch_) ;
+                        switchButton.setChecked(false);
+                    }
+
+                    speechRecognizer.stopListening();
+                    customRVAdapter.toggleChange(1, false);
+                    textToSpeech.speak("Okay, I am turning the lights off.",TextToSpeech.QUEUE_FLUSH, null) ;
+                }
+            }
+        }
     }
 
     @Override
@@ -180,7 +240,43 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
     @Override
     protected void onPause() {
         super.onPause();
+        Log.i(TAG, "onPause: ");
+    }
 
-        speechRecognizer.destroy();
+    @Override
+    public void notifyOnServer(final int id, final boolean status) {
+        String irisServerUrl = "http://139.59.31.235:6969/device" ;
+
+        StringRequest updateOnServerUrl = new StringRequest(Request.Method.POST, irisServerUrl,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        Log.i(TAG, "onResponse: ");
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                NetworkResponse response = error.networkResponse ;
+                Log.i(TAG, "onErrorResponse: " + new String(response.data) );
+            }
+        }){
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                HashMap<String, String> postParms = new HashMap<>();
+
+                String state ;
+                if(status)
+                    state = "1" ;
+                else
+                    state = "0" ;
+
+                postParms.put("deviceID", String.valueOf(id)) ;
+                postParms.put("deviceState", state) ;
+                postParms.put("timeStamp", String.valueOf(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.ENGLISH))) ;
+                return postParms ;
+            }
+        };
+
+        AppController.getInstance().addToRequestQueue(updateOnServerUrl);
     }
 }
