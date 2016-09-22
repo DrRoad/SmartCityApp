@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -38,6 +39,10 @@ import in.ac.vit.smartcityapp.Controller.CustomRVAdapter;
 import in.ac.vit.smartcityapp.Model.Entities.DeviceConfig;
 import in.ac.vit.smartcityapp.Model.Interfaces.ActivityAdapterCommunication;
 import in.ac.vit.smartcityapp.R;
+import rx.Observer;
+import rx.Subscription;
+import rx.functions.Func1;
+import rx.subjects.PublishSubject;
 
 public class MainActivity extends AppCompatActivity implements RecognitionListener, ActivityAdapterCommunication{
 
@@ -54,8 +59,10 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
     private SpeechRecognizer speechRecognizer = null ;
     private Intent recognizerIntent;
 
-
     private boolean isOn = false ;
+
+    private PublishSubject<String> debouncer ;
+    private Subscription subscription ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +70,7 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
         setContentView(R.layout.activity_main);
 
         ButterKnife.bind(this) ;
+        createObservables();
         init() ;
 
     }
@@ -201,11 +209,12 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
             Log.i(TAG, "onPartialResults: \n" + result);
 
             String text = result.toLowerCase() ;
-            textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null) ;
+            /*textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null) ;*/
 
             if(!text.contains("don't") && !text.contains("do not")){
                 if(text.contains("on") && text.contains("lights")){
                     customRVAdapter.toggleChange(1, true);
+                    text = " " ;
 
                     View view = recyclerViewGrid.getChildAt(1) ;
                     if(view!= null){
@@ -227,7 +236,14 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
                     speechRecognizer.stopListening();
                     customRVAdapter.toggleChange(1, false);
                     textToSpeech.speak("Okay, I am turning the lights off.",TextToSpeech.QUEUE_FLUSH, null) ;
+                    text = " " ;
+                }else {
+                    speechRecognizer.stopListening();
+                    textToSpeech.speak("Sorry, I am unable to perform that for you",TextToSpeech.QUEUE_FLUSH, null) ;
                 }
+            }else {
+                speechRecognizer.stopListening();
+                textToSpeech.speak("Sorry, I am unable to perform that for you",TextToSpeech.QUEUE_FLUSH, null) ;
             }
         }
     }
@@ -278,5 +294,33 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
         };
 
         AppController.getInstance().addToRequestQueue(updateOnServerUrl);
+    }
+
+    private void createObservables(){
+        debouncer = PublishSubject.create() ;
+        subscription = debouncer
+                .debounce(400, TimeUnit.MILLISECONDS)
+                .map(new Func1<String, String>() {
+                    @Override
+                    public String call(String s) {
+                        return "bullshit";
+                    }
+                })
+                .subscribe(new Observer<String>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(String s) {
+
+                    }
+                }) ;
     }
 }
