@@ -3,10 +3,12 @@ package in.ac.vit.smartcityapp;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.rey.material.widget.Switch;
@@ -18,6 +20,7 @@ import butterknife.ButterKnife;
 
 public class CustomRVAdapter extends RecyclerView.Adapter<CustomRVAdapter.CustomViewHolder>{
 
+    private static final String TAG = "TAG";
     private Context activityContext ;
     private List<DeviceConfig> deviceConfigList ;
 
@@ -34,11 +37,18 @@ public class CustomRVAdapter extends RecyclerView.Adapter<CustomRVAdapter.Custom
     }
 
     @Override
-    public void onBindViewHolder(CustomViewHolder holder, int position) {
-        DeviceConfig tempConfig = deviceConfigList.get(position) ;
+    public void onBindViewHolder(final CustomViewHolder holder, int position) {
+        final DeviceConfig tempConfig = deviceConfigList.get(holder.getAdapterPosition()) ;
         holder.switchToggle.setChecked(tempConfig.isDeviceCurrentStatus());
         holder.tvDeviceName.setText(tempConfig.getDeviceName());
         holder.tvDeviceSpecialMessage.setText(tempConfig.getSpecialDescription());
+        holder.linearLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                tempConfig.setDeviceId(holder.getAdapterPosition());
+
+            }
+        });
     }
 
     @Override
@@ -52,12 +62,14 @@ public class CustomRVAdapter extends RecyclerView.Adapter<CustomRVAdapter.Custom
         @BindView(R.id.list_item_device_icon) ImageView ivDeviceIcon ;
         @BindView(R.id.list_item_device_special_attribute) TextView tvDeviceSpecialMessage ;
         @BindView(R.id.list_item_switch_) Switch switchToggle ;
-
+        @BindView(R.id.list_item_linear_layout) LinearLayout linearLayout ;
 
         public CustomViewHolder(View itemView) {
             super(itemView);
 
             ButterKnife.bind(this, itemView) ;
         }
+
+
     }
 }
