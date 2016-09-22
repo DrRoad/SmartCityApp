@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_marginTop="10dp"
-    tools:context="in.ac.vit.smartcityapp.MainActivity">
+    tools:context="in.ac.vit.smartcityapp.View.MainActivity">
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/activity_main_recyclerView"

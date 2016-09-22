@@ -1,9 +1,8 @@
-package in.ac.vit.smartcityapp;
+package in.ac.vit.smartcityapp.Controller;
 
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +16,8 @@ import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import in.ac.vit.smartcityapp.Model.Entities.DeviceConfig;
+import in.ac.vit.smartcityapp.R;
 
 public class CustomRVAdapter extends RecyclerView.Adapter<CustomRVAdapter.CustomViewHolder>{
 

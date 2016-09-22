@@ -1,17 +1,18 @@
-package in.ac.vit.smartcityapp;
+package in.ac.vit.smartcityapp.View;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
-import android.view.View;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import in.ac.vit.smartcityapp.Controller.CustomRVAdapter;
+import in.ac.vit.smartcityapp.Model.Entities.DeviceConfig;
+import in.ac.vit.smartcityapp.R;
 
 public class MainActivity extends AppCompatActivity {
 

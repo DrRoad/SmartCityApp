@@ -1,4 +1,4 @@
-package in.ac.vit.smartcityapp;
+package in.ac.vit.smartcityapp.Model.Entities;
 
 
 public class DeviceConfig {

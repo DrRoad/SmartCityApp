@@ -1,4 +1,4 @@
-package in.ac.vit.smartcityapp;
+package in.ac.vit.smartcityapp.Controller;
 
 import android.view.View;
 
