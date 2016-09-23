@@ -21,11 +21,12 @@ import in.ac.vit.smartcityapp.Model.Entities.DeviceConfig;
 import in.ac.vit.smartcityapp.Model.Interfaces.ActivityToAdapterCom;
 import in.ac.vit.smartcityapp.R;
 import in.ac.vit.smartcityapp.View.MainActivity;
+import in.ac.vit.smartcityapp.View.ModMainActivity;
 
 public class CustomRVAdapter extends RecyclerView.Adapter<CustomRVAdapter.CustomViewHolder> implements ActivityToAdapterCom {
 
     private static final String TAG = "TAG";
-    private MainActivity mainActivity;
+    private MainActivity  mainActivity;
     private List<DeviceConfig> deviceConfigList ;
     private CustomViewHolder holder ;
 
@@ -89,7 +90,7 @@ public class CustomRVAdapter extends RecyclerView.Adapter<CustomRVAdapter.Custom
     public void toggleChange(int i, boolean status) {
         DeviceConfig tempConfig = deviceConfigList.get(i) ;
         tempConfig.setDeviceCurrentStatus(status);
-        Log.i(TAG, "toggleChange: ");
+        Log.d(TAG, "toggleChange() called with: i = [" + i + "], status = [" + status + "]");
         holder.switchToggle.setChecked(status);
     }
 }

@@ -1,6 +1,7 @@
 package in.ac.vit.smartcityapp.View;
 
 import android.content.Intent;
+import android.os.Handler;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -13,6 +14,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkResponse;
@@ -41,6 +44,7 @@ import in.ac.vit.smartcityapp.Model.Interfaces.ActivityAdapterCommunication;
 import in.ac.vit.smartcityapp.R;
 import rx.Observer;
 import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
@@ -52,13 +56,13 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
     @BindView(R.id.activity_main_record) ImageButton recordButton ;
 
     private TextToSpeech textToSpeech ;
+    private String fullText, text ;
 
     private CustomRVAdapter customRVAdapter ;
     List<DeviceConfig> deviceConfigList ;
 
     private SpeechRecognizer speechRecognizer = null ;
     private Intent recognizerIntent;
-
     private boolean isOn = false ;
 
     private PublishSubject<String> debouncer ;
@@ -70,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
         setContentView(R.layout.activity_main);
 
         ButterKnife.bind(this) ;
-        createObservables();
+        //createObservables();
         init() ;
 
     }
@@ -78,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
     private void init() {
         addDataToArray() ;
         customRVAdapter = new CustomRVAdapter(this, deviceConfigList) ;
-        recyclerViewGrid.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
+        recyclerViewGrid.setLayoutManager(new StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.VERTICAL));
         recyclerViewGrid.setAdapter(customRVAdapter);
 
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this) ;
@@ -105,14 +109,14 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
 
     private void addDataToArray() {
         deviceConfigList = new ArrayList<>() ;
-        deviceConfigList.add(new DeviceConfig(1, "Fridge", true, "temp: 16deg")) ;
-        deviceConfigList.add(new DeviceConfig(1, "Washing Machine", false, "offline")) ;
-        deviceConfigList.add(new DeviceConfig(1, "Television", false, "last: 1 hour")) ;
-        deviceConfigList.add(new DeviceConfig(1, "Main Lights", true, "220W")) ;
-        deviceConfigList.add(new DeviceConfig(1, "Fridge", true, "temp: 16deg")) ;
-        for (int i = 0; i < 12; i++) {
-            deviceConfigList.add(new DeviceConfig(1, "Fridge", true, "temp: 16deg")) ;
-        }
+        deviceConfigList.add(new DeviceConfig(1, "Street Light", false, "Simple")) ;
+        deviceConfigList.add(new DeviceConfig(2, "Street Light", false, "Blink")) ;
+        deviceConfigList.add(new DeviceConfig(3, "Building", false, "Simple")) ;
+    }
+
+    @Override
+    public void onReadyForSpeech(Bundle bundle) {
+
     }
 
     @OnClick(R.id.activity_main_record)
@@ -127,12 +131,6 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
         isOn = !isOn ;
 
     }
-
-    @Override
-    public void onReadyForSpeech(Bundle bundle) {
-
-    }
-
     @Override
     public void onBeginningOfSpeech() {
 
@@ -145,12 +143,15 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
 
     @Override
     public void onBufferReceived(byte[] bytes) {
+
         Log.d(TAG, "onBufferReceived() called with: bytes = [" + bytes + "]");
     }
 
     @Override
     public void onEndOfSpeech() {
         Log.i(TAG, "onEndOfSpeech: ");
+
+
     }
 
     @Override
@@ -205,47 +206,23 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
         ArrayList<String> matches = bundle
                 .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
 
-        for (String result : matches){
-            Log.i(TAG, "onPartialResults: \n" + result);
+        for (String result : matches) {
 
-            String text = result.toLowerCase() ;
+            Log.i(TAG, "onPartialResults: \n" + fullText);
+            text = result.toLowerCase();
+        }
             /*textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null) ;*/
 
-            if(!text.contains("don't") && !text.contains("do not")){
-                if(text.contains("on") && text.contains("lights")){
-                    customRVAdapter.toggleChange(1, true);
-                    text = " " ;
-
-                    View view = recyclerViewGrid.getChildAt(1) ;
-                    if(view!= null){
-                        Switch switchButton = (Switch) view.findViewById(R.id.list_item_switch_) ;
-                        switchButton.setChecked(true);
-                    }
-
-                    isOn = !isOn ;
-                    speechRecognizer.stopListening();
-                    textToSpeech.speak("Okay, I am turning the lights on.",TextToSpeech.QUEUE_FLUSH, null) ;
-                }else if(text.contains("off") && text.contains("lights")){
-
-                    View view = recyclerViewGrid.getChildAt(1) ;
-                    if(view!= null){
-                        Switch switchButton = (Switch) view.findViewById(R.id.list_item_switch_) ;
-                        switchButton.setChecked(false);
-                    }
-
-                    speechRecognizer.stopListening();
-                    customRVAdapter.toggleChange(1, false);
-                    textToSpeech.speak("Okay, I am turning the lights off.",TextToSpeech.QUEUE_FLUSH, null) ;
-                    text = " " ;
-                }else {
-                    speechRecognizer.stopListening();
-                    textToSpeech.speak("Sorry, I am unable to perform that for you",TextToSpeech.QUEUE_FLUSH, null) ;
-                }
-            }else {
-                speechRecognizer.stopListening();
-                textToSpeech.speak("Sorry, I am unable to perform that for you",TextToSpeech.QUEUE_FLUSH, null) ;
+        new Handler().postDelayed(new Runnable(){
+            @Override
+            public void run() {
+                textAutomation(text);
             }
-        }
+        }, 600);
+
+        //debouncer.onNext(text);
+
+
     }
 
     @Override
@@ -261,19 +238,20 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
 
     @Override
     public void notifyOnServer(final int id, final boolean status) {
+        Log.d(TAG, "notifyOnServer() called with: id = [" + id + "], status = [" + status + "]");
         String irisServerUrl = "http://139.59.31.235:6969/device" ;
 
         StringRequest updateOnServerUrl = new StringRequest(Request.Method.POST, irisServerUrl,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        Log.i(TAG, "onResponse: ");
+                        Log.i(TAG, "onResponse: " + response);
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 NetworkResponse response = error.networkResponse ;
-                Log.i(TAG, "onErrorResponse: " + new String(response.data) );
+                Log.i(TAG, "VOLLEY onErrorResponse: " + new String(response.data) );
             }
         }){
             @Override
@@ -286,7 +264,7 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
                 else
                     state = "0" ;
 
-                postParms.put("deviceID", String.valueOf(id)) ;
+                postParms.put("deviceID", String.valueOf(id+1)) ;
                 postParms.put("deviceState", state) ;
                 postParms.put("timeStamp", String.valueOf(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.ENGLISH))) ;
                 return postParms ;
@@ -303,9 +281,13 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
                 .map(new Func1<String, String>() {
                     @Override
                     public String call(String s) {
+                        Log.d(TAG, "call() called with: s = [" + s + "]");
+                        textAutomation(s);
                         return "bullshit";
                     }
                 })
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<String>() {
                     @Override
                     public void onCompleted() {
@@ -319,8 +301,61 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
 
                     @Override
                     public void onNext(String s) {
-
+                        Log.d(TAG, "onNext() called with: s = [" + s + "]");
                     }
                 }) ;
+    }
+
+
+    void textAutomation(String text){
+
+        Log.d(TAG, "textAutomation() called with: text = [" + text + "]");
+        View view  ;
+
+        if((text.contains("on") || text.contains("onn")) && (text.contains("blink") || (text.contains("blinking"))) ){
+            customRVAdapter.toggleChange(2, true);
+            notifyOnServer(2, true);
+            textToSpeech.speak("Okay your highness, Turning the blinking street lights on. Glad to serve you.",TextToSpeech.QUEUE_FLUSH, null ) ;
+
+            view = recyclerViewGrid.getChildAt(2) ;
+            if(view!= null){
+                Log.d(TAG, "onPartialResults: view not null");
+                Switch switchButton = (Switch) view.findViewById(R.id.list_item_switch_) ;
+                switchButton.setChecked(true);
+            }
+
+            speechRecognizer.stopListening();
+            isOn = !isOn ;
+
+        }else if(text.contains("off")){
+            customRVAdapter.toggleChange(1, false);
+            notifyOnServer(1, false);
+            view = recyclerViewGrid.getChildAt(1) ;
+            if(view!= null){
+                Switch switchButton = (Switch) view.findViewById(R.id.list_item_switch_) ;
+                switchButton.setChecked(false);
+            }
+            textToSpeech.speak("Okay Sir, Turning the street lights off",TextToSpeech.QUEUE_FLUSH, null ) ;
+            speechRecognizer.stopListening();
+            isOn = !isOn ;
+
+        }else if (text.contains("on")){
+            customRVAdapter.toggleChange(1, true);
+            notifyOnServer(1, true);
+            view = recyclerViewGrid.getChildAt(1) ;
+
+            if(view!= null){
+                Switch switchButton = (Switch) view.findViewById(R.id.list_item_switch_) ;
+                switchButton.setChecked(true);
+            }
+            textToSpeech.speak("Okay Sir, Turning the stable street lights on",TextToSpeech.QUEUE_FLUSH, null ) ;
+            speechRecognizer.stopListening();
+            isOn = !isOn ;
+        }else {
+            if(text.length() > 0){
+                Toast.makeText(this, "Invalid Command", Toast.LENGTH_SHORT).show();
+                speechRecognizer.stopListening();
+            }
+        }
     }
 }

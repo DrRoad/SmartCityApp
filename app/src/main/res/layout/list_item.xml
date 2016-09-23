@@ -29,12 +29,13 @@
             android:padding="5dp"
             android:layout_gravity="center_horizontal"
             android:id="@+id/list_item_device_icon"
-            app:srcCompat="@drawable/ic_kitchen_white_24px"
+            app:srcCompat="@drawable/ic_wb_sunny_black_24px"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
         <com.rey.material.widget.Switch
             android:padding="5dp"
+            app:sw_trackSize="10dp"
             android:layout_gravity="center_horizontal"
             android:id="@+id/list_item_switch_"
             android:layout_width="wrap_content"
