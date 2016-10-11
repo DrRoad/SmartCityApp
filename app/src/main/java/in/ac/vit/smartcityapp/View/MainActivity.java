@@ -312,7 +312,7 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
         Log.d(TAG, "textAutomation() called with: text = [" + text + "]");
         View view  ;
 
-        if((text.contains("on") || text.contains("onn")) && (text.contains("blink") || (text.contains("blinking"))) ){
+        /*if((text.contains("on") || text.contains("onn")) && (text.contains("blink") || (text.contains("blinking"))) ){
             customRVAdapter.toggleChange(2, true);
             notifyOnServer(2, true);
             textToSpeech.speak("Okay your highness, Turning the blinking street lights on. Glad to serve you.",TextToSpeech.QUEUE_FLUSH, null ) ;
@@ -356,6 +356,94 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
                 Toast.makeText(this, "Invalid Command", Toast.LENGTH_SHORT).show();
                 speechRecognizer.stopListening();
             }
+        }*/
+
+
+        if(text.contains("on")){
+            if(text.contains("light") || text.contains("lights")){
+                if (text.contains("blinking") || text.contains("blink")){
+                    customRVAdapter.toggleChange(2, true);
+                    view = recyclerViewGrid.getChildAt(2) ;
+                    if(view!= null){
+                        Switch switchButton = (Switch) view.findViewById(R.id.list_item_switch_) ;
+                        switchButton.setChecked(true);
+                    }
+                    textToSpeech.speak("Okay Sir, Turning the blinking street lights on",TextToSpeech.QUEUE_FLUSH, null ) ;
+                    speechRecognizer.stopListening();
+                    isOn = !isOn ;
+                    //2, true
+                }else if(text.contains("building") || text.contains("sjt")) {
+                    customRVAdapter.toggleChange(3, true);
+                    view = recyclerViewGrid.getChildAt(3) ;
+
+                    if(view!= null){
+                        Switch switchButton = (Switch) view.findViewById(R.id.list_item_switch_) ;
+                        switchButton.setChecked(true);
+                    }
+                    textToSpeech.speak("Okay Sir, Turning the building lights on",TextToSpeech.QUEUE_FLUSH, null ) ;
+                    speechRecognizer.stopListening();
+                    isOn = !isOn ;
+                     //3, true
+                }else {
+                    customRVAdapter.toggleChange(1, true);
+                    view = recyclerViewGrid.getChildAt(1) ;
+
+                    if(view!= null){
+                        Switch switchButton = (Switch) view.findViewById(R.id.list_item_switch_) ;
+                        switchButton.setChecked(true);
+                    }
+                    textToSpeech.speak("Okay Sir, Turning the stable street lights on",TextToSpeech.QUEUE_FLUSH, null ) ;
+                    speechRecognizer.stopListening();
+                    isOn = !isOn ;
+                    //1, true
+                }
+            }
+        }else if (text.contains("off")){
+            if(text.contains("light") || text.contains("lights")){
+                if (text.contains("blinking") || text.contains("blink")){
+                    customRVAdapter.toggleChange(2, false);
+                    view = recyclerViewGrid.getChildAt(2) ;
+
+                    if(view!= null){
+                        Switch switchButton = (Switch) view.findViewById(R.id.list_item_switch_) ;
+                        switchButton.setChecked(true);
+                    }
+                    textToSpeech.speak("Okay Sir, Turning the blinking street lights off",TextToSpeech.QUEUE_FLUSH, null ) ;
+                    speechRecognizer.stopListening();
+                    isOn = !isOn ;
+                    //2, true
+                }else if(text.contains("building") || text.contains("sjt")) {
+                    customRVAdapter.toggleChange(3, false);
+                    view = recyclerViewGrid.getChildAt(3) ;
+
+                    if(view!= null){
+                        Switch switchButton = (Switch) view.findViewById(R.id.list_item_switch_) ;
+                        switchButton.setChecked(true);
+                    }
+                    textToSpeech.speak("Okay Sir, Turning the building lights off",TextToSpeech.QUEUE_FLUSH, null ) ;
+                    speechRecognizer.stopListening();
+                    isOn = !isOn ;
+                    //3, true
+                }else {
+                    customRVAdapter.toggleChange(1, true);
+                    notifyOnServer(1, true);
+                    view = recyclerViewGrid.getChildAt(1) ;
+
+                    if(view!= null){
+                        Switch switchButton = (Switch) view.findViewById(R.id.list_item_switch_) ;
+                        switchButton.setChecked(true);
+                    }
+                    textToSpeech.speak("Okay Sir, Turning the stable street lights off",TextToSpeech.QUEUE_FLUSH, null ) ;
+                    speechRecognizer.stopListening();
+                    isOn = !isOn ;
+                    //1, true
+                }
+            }
+        }else {
+            //invalid
+            Toast.makeText(this, "Invalid Speech Command", Toast.LENGTH_SHORT).show();
+            speechRecognizer.stopListening();
         }
+
     }
 }
